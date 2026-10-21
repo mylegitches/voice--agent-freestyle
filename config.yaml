@@ -1,0 +1,23 @@
+server:
+  host: 127.0.0.1
+  port: 8000
+llm:
+  base_url: https://ollama.com/v1
+  model: minimax-m3
+  timeout_seconds: 45
+room_defaults:
+  max_context_lines: 30
+  summary_interval: 20
+  bid_threshold: 3
+  eagerness_weight: 2.0
+  direct_address_bonus: 3.0
+  interjection_mode: cut
+audio:
+  save_session_audio: false
+  model_roots:
+    - models
+    - models/voices
+stt:
+  model: small.en
+  device: cpu
+  compute_type: int8

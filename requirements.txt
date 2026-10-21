@@ -1,0 +1,16 @@
+fastapi==0.158.1
+uvicorn[standard]==0.54.0
+sqlalchemy[asyncio]==2.1.6
+aiosqlite==0.22.1
+alembic==1.20.0
+pydantic-settings==2.16.1
+python-dotenv==1.2.4
+PyYAML==6.0.3
+python-multipart==0.0.32
+openai==3.36.0
+piper-tts==1.8.0
+faster-whisper==1.2.1
+# faster-whisper 1.2.1 still passes metadata_errors to av.open; PyAV 19
+# removed that argument.
+av==16.0.1
+httpx==0.28.1

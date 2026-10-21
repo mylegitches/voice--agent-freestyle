@@ -1,0 +1,23 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+web/vite.config.js
+web/vite.config.d.ts
+
+data/*.sqlite3
+data/*.sqlite3-*
+data/sessions/
+
+# Voice models are local runtime assets. Use Git LFS deliberately if these ever
+# need to be distributed; several supplied files exceed GitHub's normal limit.
+models/**/*.onnx
+models/*.onnx
