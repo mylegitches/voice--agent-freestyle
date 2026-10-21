@@ -37,6 +37,13 @@ class PiperService:
         speaker_id: int = 0,
         length_scale: float = 1.0,
     ) -> bytes:
+        if self.catalog.is_remote(model_path):
+            # Wyoming has no per-request length_scale; the server's voice config applies.
+            voice = self.catalog.resolve_remote(model_path, config_path)
+            assert self.catalog.remote is not None
+            return await asyncio.to_thread(
+                self.catalog.remote.synthesize, text, voice.name, speaker_id
+            )
         model, config = self.catalog.resolve_pair(model_path, config_path)
         return await asyncio.to_thread(
             self._synthesize_sync, text, model, config, speaker_id, length_scale
@@ -84,6 +91,8 @@ class PiperService:
         return output.getvalue()
 
     def invalidate(self, model_path: str) -> None:
+        if self.catalog.is_remote(model_path):
+            return
         try:
             model, _ = self.catalog.resolve_pair(model_path)
         except ValueError:

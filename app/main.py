@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -52,7 +53,7 @@ app.include_router(ws_router)
 
 @app.get("/api/health")
 async def health(verify_llm: bool = Query(default=False)):
-    voices = voice_catalog.scan()
+    voices = await asyncio.to_thread(voice_catalog.scan)
     llm_ok = llm_service.configured
     llm_message = "configured" if llm_ok else "OLLAMA_API_KEY is not configured"
     if verify_llm and llm_ok:
@@ -63,6 +64,14 @@ async def health(verify_llm: bool = Query(default=False)):
             "count": len(voices),
             "errors": [voice.id for voice in voices if voice.status == "error"],
             "tts_dependency": tts_service.available(),
+            "piper_server": (
+                {
+                    "host": f"{settings.piper_host}:{settings.piper_port}",
+                    "error": voice_catalog.remote.last_error,
+                }
+                if voice_catalog.remote
+                else None
+            ),
         },
         "stt": {"dependency": stt_service.available(), "model": settings.whisper_model},
         "llm": {

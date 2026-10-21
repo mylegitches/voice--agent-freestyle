@@ -36,13 +36,17 @@ class OllamaLLM:
             )
         return self._client
 
+    def _extra(self) -> dict[str, Any]:
+        effort = self.settings.llm_reasoning_effort
+        return {"reasoning_effort": effort} if effort else {}
+
     async def verify_model(self) -> tuple[bool, str]:
         if not self.settings.ollama_api_key:
             return False, "OLLAMA_API_KEY is not configured"
         try:
             async with httpx.AsyncClient(timeout=15) as client:
                 response = await client.get(
-                    "https://ollama.com/api/tags",
+                    self.settings.llm_base_url.rstrip("/").removesuffix("/v1") + "/api/tags",
                     headers={"Authorization": f"Bearer {self.settings.ollama_api_key}"},
                 )
                 response.raise_for_status()
@@ -70,6 +74,7 @@ class OllamaLLM:
         client = self._get_client()
         response = await client.chat.completions.create(
             model=self.settings.llm_model,
+            extra_body=self._extra(),
             temperature=0.2,
             max_tokens=24,
             messages=[
@@ -114,6 +119,7 @@ class OllamaLLM:
         )
         stream = await client.chat.completions.create(
             model=self.settings.llm_model,
+            extra_body=self._extra(),
             temperature=0.85,
             stream=True,
             messages=[
@@ -144,6 +150,7 @@ class OllamaLLM:
         client = self._get_client()
         response = await client.chat.completions.create(
             model=self.settings.llm_model,
+            extra_body=self._extra(),
             temperature=0.1,
             max_tokens=350,
             messages=[

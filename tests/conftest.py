@@ -8,7 +8,9 @@ TEST_DB = Path(__file__).resolve().parents[1] / "data" / "test-voice-room.sqlite
 TEST_DB.parent.mkdir(parents=True, exist_ok=True)
 TEST_DB.unlink(missing_ok=True)
 os.environ["VOICE_ROOM_DATABASE_URL"] = f"sqlite+aiosqlite:///{TEST_DB.as_posix()}"
-os.environ.pop("OLLAMA_API_KEY", None)
+# Empty values win over .env because load_dotenv does not override.
+os.environ["OLLAMA_API_KEY"] = ""
+os.environ["VOICE_ROOM_PIPER_HOST"] = ""
 
 
 def pytest_sessionfinish() -> None:

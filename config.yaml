@@ -5,6 +5,9 @@ llm:
   base_url: https://ollama.com/v1
   model: minimax-m3
   timeout_seconds: 45
+  # MiniMax M3 is a reasoning model; without this, short bid/summary calls spend
+  # their whole token budget thinking and return no content.
+  reasoning_effort: none
 room_defaults:
   max_context_lines: 30
   summary_interval: 20
@@ -17,6 +20,13 @@ audio:
   model_roots:
     - models
     - models/voices
+tts:
+  # Remote Wyoming Piper server. Set VOICE_ROOM_PIPER_HOST in .env (or here) to
+  # enable it; local models/ voices keep synthesizing in-process.
+  wyoming_host: ""
+  wyoming_port: 10200
+  languages:
+    - en
 stt:
   model: small.en
   device: cpu

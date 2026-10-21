@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
@@ -27,6 +28,14 @@ router = APIRouter(prefix="/api/characters", tags=["characters"])
 
 
 def _validate_voice(model_path: str, config_path: str, speaker_id: int) -> None:
+    if voice_catalog.is_remote(model_path):
+        try:
+            voice = voice_catalog.resolve_remote(model_path, config_path)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        if speaker_id >= max(1, len(voice.speakers)):
+            raise HTTPException(422, f"speaker_id must be below {max(1, len(voice.speakers))}")
+        return
     try:
         model, config = voice_catalog.resolve_pair(model_path, config_path)
         metadata = json.loads(config.read_text(encoding="utf-8"))
@@ -46,7 +55,7 @@ async def get_all(db: AsyncSession = Depends(get_db)):
 
 @router.post("", response_model=CharacterRead, status_code=status.HTTP_201_CREATED)
 async def create(payload: CharacterCreate, db: AsyncSession = Depends(get_db)):
-    _validate_voice(payload.voice_path, payload.voice_config_path, payload.speaker_id)
+    await asyncio.to_thread(_validate_voice, payload.voice_path, payload.voice_config_path, payload.speaker_id)
     return await create_character(db, payload)
 
 
@@ -63,7 +72,7 @@ async def update(character_id: int, payload: CharacterUpdate, db: AsyncSession =
     item = await get_character(db, character_id)
     if item is None:
         raise HTTPException(404, "Character not found")
-    _validate_voice(payload.voice_path, payload.voice_config_path, payload.speaker_id)
+    await asyncio.to_thread(_validate_voice, payload.voice_path, payload.voice_config_path, payload.speaker_id)
     return await update_character(db, item, payload)
 
 
@@ -146,4 +155,4 @@ voices_router = APIRouter(prefix="/api/voices", tags=["voices"])
 
 @voices_router.get("", response_model=list[VoiceInfo])
 async def voices():
-    return voice_catalog.scan()
+    return await asyncio.to_thread(voice_catalog.scan)

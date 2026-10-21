@@ -20,10 +20,14 @@ class Settings:
     port: int = 8000
     database_url: str = ""
     llm_base_url: str = "https://ollama.com/v1"
-    llm_model: str = "minimax-m3:cloud"
+    llm_model: str = "minimax-m3"
     llm_timeout_seconds: float = 45.0
+    llm_reasoning_effort: str | None = "none"
     ollama_api_key: str | None = None
     model_roots: list[Path] = field(default_factory=list)
+    piper_host: str = ""
+    piper_port: int = 10200
+    piper_languages: list[str] = field(default_factory=list)
     save_session_audio: bool = False
     whisper_model: str = "small.en"
     whisper_device: str = "cpu"
@@ -63,11 +67,15 @@ def get_settings() -> Settings:
         llm_base_url=str(_nested(raw, "llm", "base_url", "https://ollama.com/v1")),
         llm_model=os.getenv(
             "VOICE_ROOM_LLM_MODEL",
-            str(_nested(raw, "llm", "model", "minimax-m3:cloud")),
+            str(_nested(raw, "llm", "model", "minimax-m3")),
         ),
         llm_timeout_seconds=float(_nested(raw, "llm", "timeout_seconds", 45)),
+        llm_reasoning_effort=_nested(raw, "llm", "reasoning_effort", "none") or None,
         ollama_api_key=os.getenv("OLLAMA_API_KEY") or None,
         model_roots=roots,
+        piper_host=os.getenv("VOICE_ROOM_PIPER_HOST", str(_nested(raw, "tts", "wyoming_host", "") or "")),
+        piper_port=int(os.getenv("VOICE_ROOM_PIPER_PORT", _nested(raw, "tts", "wyoming_port", 10200))),
+        piper_languages=list(_nested(raw, "tts", "languages", []) or []),
         save_session_audio=bool(_nested(raw, "audio", "save_session_audio", False)),
         whisper_model=os.getenv(
             "VOICE_ROOM_WHISPER_MODEL", str(_nested(raw, "stt", "model", "small.en"))

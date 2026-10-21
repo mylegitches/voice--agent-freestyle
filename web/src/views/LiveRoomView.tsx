@@ -23,6 +23,7 @@ export default function LiveRoomView({ room, session, onExit }: { room: Room; se
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<number | null>(null);
   const shouldReconnect = useRef(true);
+  const stateRef = useRef<RoomState>("connecting");
   const pendingAudio = useRef<{ lineId: number } | null>(null);
   const audioQueue = useRef<AudioItem[]>([]);
   const activeAudio = useRef<HTMLAudioElement | null>(null);
@@ -60,6 +61,8 @@ export default function LiveRoomView({ room, session, onExit }: { room: Room; se
     audioQueue.current = [];
     pendingAudio.current = null;
   }, []);
+
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   useEffect(() => {
     shouldReconnect.current = true;
@@ -100,9 +103,11 @@ export default function LiveRoomView({ room, session, onExit }: { room: Room; se
           case "error": setError(message.message); break;
         }
       };
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         setConnected(false);
-        if (shouldReconnect.current && state !== "stopped") reconnectTimer.current = window.setTimeout(connect, 1500);
+        // 4404: room/session gone or already stopped; retrying cannot succeed.
+        if (event.code === 4404) shouldReconnect.current = false;
+        if (shouldReconnect.current && stateRef.current !== "stopped") reconnectTimer.current = window.setTimeout(connect, 1500);
       };
       socket.onerror = () => setError("The live-room connection failed.");
     };
@@ -175,6 +180,6 @@ export default function LiveRoomView({ room, session, onExit }: { room: Room; se
         </div>
       </div>
     </section>
-    {showDebug && <aside className="debug-panel"><div className="debug-head"><div><span className="eyebrow">LAST AUCTION</span><h3>Who speaks next?</h3></div><button className="icon-button" onClick={() => setShowDebug(false)}><X size={17} /></button></div>{bids.length ? bids.sort((a, b) => b.score - a.score).map((bid, index) => <div className="bid-row" key={bid.character_id}><div><i>{index + 1}</i><span>{bid.name}<small>raw {bid.raw_bid.toFixed(1)}</small></span></div><strong>{bid.score.toFixed(1)}</strong><div className="bid-bar"><span style={{ width: `${Math.min(100, bid.score * 8)}%` }} /></div></div>) : <p className="subtle">Bid scores appear after the first turn.</p>}</aside>}
+    {showDebug && <aside className="debug-panel"><div className="debug-head"><div><span className="eyebrow">LAST AUCTION</span><h3>Who speaks next?</h3></div><button className="icon-button" onClick={() => setShowDebug(false)}><X size={17} /></button></div>{bids.length ? [...bids].sort((a, b) => b.score - a.score).map((bid, index) => <div className="bid-row" key={bid.character_id}><div><i>{index + 1}</i><span>{bid.name}<small>raw {bid.raw_bid.toFixed(1)}</small></span></div><strong>{bid.score.toFixed(1)}</strong><div className="bid-bar"><span style={{ width: `${Math.min(100, bid.score * 8)}%` }} /></div></div>) : <p className="subtle">Bid scores appear after the first turn.</p>}</aside>}
   </div>;
 }
